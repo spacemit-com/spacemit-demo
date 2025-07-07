@@ -1,0 +1,2 @@
+wget -O ./kitten.jpg https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/Datasets/test/kitten.jpg
+wget -O ./label.txt https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/Datasets/ImageNet/label.txt

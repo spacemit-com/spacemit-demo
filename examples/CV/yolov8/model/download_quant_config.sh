@@ -1,0 +1,2 @@
+wget -O ./xquant_config.json https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/CV/YOLOv8/xquant_config.json 
+wget -O ./yolov8_preprocess.py https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/CV/YOLOv8/yolov8_preprocess.py 
