@@ -1,5 +1,5 @@
 import onnxruntime
-#import spacemit_ort
+import spacemit_ort
 import cv2
 import numpy as np
 from PIL import Image

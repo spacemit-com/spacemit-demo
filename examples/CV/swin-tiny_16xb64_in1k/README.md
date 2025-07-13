@@ -52,7 +52,7 @@ pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-h
 
 ### 2.2 转换浮点模型为量化模型
 
-[Calibration数据下载]: https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/Datasets/ImageNet/Imagenet.tar.gz
+[Calibration数据下载](https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/Datasets/ImageNet/Imagenet.tar.gz)
 
 
 

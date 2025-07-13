@@ -1,6 +1,6 @@
 # YOLOv5-face
 
-## 1.模型数据下载
+## 1.模型数据获取
 
 ```shell
 cd data/
