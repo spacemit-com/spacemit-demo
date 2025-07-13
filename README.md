@@ -1,8 +1,7 @@
-# Bianbu AI Demo Zoo
+# AI Demo Zoo
 
 ## 简介
-
-Bianbu AI Demo Zoo是基于进迭时空K系列芯片适配的AI应用示例。包含传统CV模型、LLM模型、语音处理模型，同时提供python版本和C++版本。旨在为开发者提供简单易用的模型部署教程。
+AI Demo Zoo是基于进迭时空K系列芯片适配的AI应用示例。包含传统CV模型、LLM模型、语音处理模型，同时提供python版本和C++版本。旨在为开发者提供简单易用的模型部署教程。
 
 
 
