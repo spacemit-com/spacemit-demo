@@ -7,9 +7,6 @@ int main(int argc, char** argv)
 {
     std::string modelPath;
     std::string imagePath;
-    std::string labelFilePath = "../../data/label.txt";
-    float conf_threshold = 0.25;
-    float iou_threshold = 0.45;
     
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -26,14 +23,16 @@ int main(int argc, char** argv)
     }
 
     // Load image
-    cv::Mat image = cv::imread(imagePath);
-    if (image.empty()) {
+    cv::Mat src_image = cv::imread(imagePath);
+    if (src_image.empty()) {
         std::cerr << "Error: Could not read image." << std::endl;
         return -1;
     }
+    
 
+    cv::Mat image = src_image.clone();
     // Inference
-    cv::Mat result_img = Yolov8Inference(image, modelPath, labelFilePath, conf_threshold, iou_threshold);
+    cv::Mat result_img = Yolov8Inference(image, modelPath);
 
 
     cv::imwrite("result.jpg", result_img);

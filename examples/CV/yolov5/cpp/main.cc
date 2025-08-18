@@ -7,8 +7,8 @@ int main(int argc, char** argv)
 {
     std::string modelPath;
     std::string imagePath;
-    std::string labelFilePath = "../../data/label.txt";
-    float conf_threshold = 0.4;
+    
+    
     
 
     for (int i = 1; i < argc; ++i) {
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     }
 
     // Inference
-    cv::Mat result_img = Yolov5Inference(image, modelPath, labelFilePath, conf_threshold);
+    cv::Mat result_img = Yolov5Inference(image, modelPath);
 
 
     cv::imwrite("result.jpg", result_img);

@@ -35,14 +35,16 @@ unet-s5.q.onnx为INT8模型。
 依赖安装：
 
 ```shell
-pip install opencv-python==4.11.0 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install spacemit-ort==1.2.2 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+cd python
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
+pip install -r requirements.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
-执行流程:
+执行方法：
 
 ```shell
-cd python
 python test_unet.py
 
 # 参数说明
@@ -54,6 +56,14 @@ python test_unet.py
 结果保存为result.jpg。
 
 ### 2.2 c++ demo
+
+依赖安装：
+
+```shell
+sudo apt install libopencv-dev
+```
+
+执行方法：
 
 ```shell
 cd cpp

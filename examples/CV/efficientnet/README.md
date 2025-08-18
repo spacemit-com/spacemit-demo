@@ -44,7 +44,7 @@ sh download_data.sh
 sudo apt update && sudo apt upgrade -y
 sudo apt install python3-pip
 sudo apt install python3-virtualenv
-pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+pip install xquant -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 
 ```
 
@@ -59,7 +59,7 @@ pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-h
 ```shell
 tar -xzvf Imagenet.tar.gz 
 virtualenv xquant_env
-source xuqant_env/bin/activate
+source xquant_env/bin/activate
 cd model 
 sh download_quant_config.sh
 
@@ -99,14 +99,17 @@ python -m xuqant --config xquant_config.json
 依赖安装：
 
 ```shell
-pip install opencv-python==4.11.0 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install spacemit-ort==1.2.1 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+cd python
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
+pip install -r requirements.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+
 ```
 
-执行流程:
+执行方法:
 
 ```shell
-cd python
 python test_efficientnet.py 
 
 # 参数说明
@@ -119,6 +122,14 @@ python test_efficientnet.py
 
 
 ### 3.2 c++ demo
+
+依赖安装:
+
+```shell
+sudo apt install libopencv-dev
+```
+
+执行方法:
 
 ```shell
 cd cpp

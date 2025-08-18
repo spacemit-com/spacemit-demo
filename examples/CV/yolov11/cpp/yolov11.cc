@@ -99,7 +99,7 @@ float Calculate_Iou(const Object& det1, const Object& det2) {
 }
 
 // Non-maximum suppression
-std::vector<Object> Nms(const std::vector<Object>& dets, float iou_threshold = 0.45) {
+std::vector<Object> Nms(const std::vector<Object>& dets) {
     if (dets.empty()) {
         return std::vector<Object>();
     }
@@ -154,7 +154,7 @@ std::vector<Object> Nms(const std::vector<Object>& dets, float iou_threshold = 0
 }
 
 // Read labels from file
-std::vector<std::string> readLabels(const std::string& labelFilePath) {
+std::vector<std::string> readLabels() {
     std::vector<std::string> labels;
     std::ifstream labelFile(labelFilePath);
     if (labelFile.is_open()) {
@@ -168,7 +168,7 @@ std::vector<std::string> readLabels(const std::string& labelFilePath) {
 }
 
 // Postprocess output tensor to get detection results
-std::vector<Object> Postprocess(const cv::Size& input_size, const float* output, int anchors, int offset, float conf_threshold, float iou_threshold, int des_width,int des_height) {
+std::vector<Object> Postprocess(const cv::Size& input_size, const float* output, int anchors, int offset, int des_width,int des_height) {
     std::vector<Object> objects;            
     float ratio = std::min(static_cast<float>(des_width) / static_cast<float>(input_size.width), static_cast<float>(des_height) / static_cast<float>(input_size.height));
     int unpad_w = std::round(input_size.width * ratio);
@@ -216,15 +216,15 @@ std::vector<Object> Postprocess(const cv::Size& input_size, const float* output,
         }
     }        
     
-    return Nms(objects, iou_threshold);
+    return Nms(objects);
 
 }
 
 
 
-cv::Mat Yolov11Inference(cv::Mat& image, const std::string& modelPath, const std::string& labelFilePath, float conf_threshold, float iou_threshold) {
+cv::Mat Yolov11Inference(cv::Mat& image, const std::string& modelPath) {
     // Load labels
-    std::vector<std::string> labels = readLabels(labelFilePath);
+    std::vector<std::string> labels = readLabels();
 
     // Initialize ONNX runtime environment and session
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "YOLOv11Inference");
@@ -289,7 +289,7 @@ cv::Mat Yolov11Inference(cv::Mat& image, const std::string& modelPath, const std
     int anchors = dets_dims[2];
     
     //Run postprocess
-    std::vector<Object> detected_objects = Postprocess(image.size(),dets_data, anchors, offset, conf_threshold, iou_threshold, inputWidth, inputHeight);
+    std::vector<Object> detected_objects = Postprocess(image.size(),dets_data, anchors, offset, inputWidth, inputHeight);
 
     // Draw results
     DrawResults(image, detected_objects, labels);

@@ -13,7 +13,7 @@ cv::Mat Preprocess(const cv::Mat& image, int inputWidth, int inputHeight) {
 }
 
 // Draw results
-void DrawResults(cv::Mat& image, const std::vector<std::vector<float>>& dets, const std::vector<float>& scores, int* labels_pred, const std::vector<std::string>& labels, float conf_threshold) {    
+void DrawResults(cv::Mat& image, const std::vector<std::vector<float>>& dets, const std::vector<float>& scores, int* labels_pred, const std::vector<std::string>& labels) {    
     for (size_t i = 0; i < dets.size(); ++i) {
         const auto& det = dets[i];
         float score = scores[i];        
@@ -32,7 +32,7 @@ void DrawResults(cv::Mat& image, const std::vector<std::vector<float>>& dets, co
 
 
 // Read labels from file
-std::vector<std::string> ReadLabels(const std::string& labelFilePath) {
+std::vector<std::string> ReadLabels() {
     std::vector<std::string> labels;
     std::ifstream labelFile(labelFilePath);
     if (labelFile.is_open()) {
@@ -47,9 +47,9 @@ std::vector<std::string> ReadLabels(const std::string& labelFilePath) {
 
 
 
-cv::Mat Yolov5Inference(cv::Mat& image, const std::string& modelPath, const std::string& labelFilePath, float conf_threshold) {
+cv::Mat Yolov5Inference(cv::Mat& image, const std::string& modelPath) {
     // Load labels
-    std::vector<std::string> labels = ReadLabels(labelFilePath);
+    std::vector<std::string> labels = ReadLabels();
 
     // Initialize ONNX runtime environment and session
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "YOLOv5Inference");
@@ -136,7 +136,7 @@ cv::Mat Yolov5Inference(cv::Mat& image, const std::string& modelPath, const std:
     
     
     // Draw results
-    DrawResults(image, dets, scores, labels_pred_data, labels, conf_threshold);
+    DrawResults(image, dets, scores, labels_pred_data, labels);
 
     return image;
 }

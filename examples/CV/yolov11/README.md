@@ -2,7 +2,11 @@
 
 ## 1. 模型和数据获取
 
-### 1.1 模型获取
+### 1.1 模型导出
+
+官方onnx模型导出，可以参考[Ultralytics官方导出文档](https://docs.ultralytics.com/zh/modes/export/#introduction)。
+
+### 1.2 模型获取
 
 ```shell
 cd model
@@ -17,7 +21,7 @@ yolov11n_320x320.q.onnx为INT8模型。
 
 
 
-### 1.2 数据获取
+### 1.3 数据获取
 
 ```shell
 cd data
@@ -44,7 +48,7 @@ sh download_data.sh
 sudo apt update && sudo apt upgrade -y
 sudo apt install python3-pip
 sudo apt install python3-virtualenv
-pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+pip install xquant -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 
 ```
 
@@ -59,7 +63,7 @@ pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-h
 ```shell
 tar -xzvf Coco.tar.gz 
 virtualenv xquant_env
-source xuqant_env/bin/activate
+source xquant_env/bin/activate
 cd model 
 sh download_quant_config.sh
 
@@ -99,14 +103,16 @@ python -m xuqant --config xquant_config.json
 依赖安装：
 
 ```shell
-pip install opencv-python==4.11.0 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install spacemit-ort==1.2.2 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+cd python
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
+pip install -r requirements.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
-执行流程:
+执行方法:
 
 ```shell
-cd python
 python test_yolov11.py
 
 # 参数说明
@@ -121,6 +127,14 @@ python test_yolov11.py
 结果保存为result.jpg
 
 ### 3.2 c++ demo
+
+依赖安装：
+
+```shell
+sudo apt install libopencv-dev
+```
+
+执行方法：
 
 ```shell
 cd cpp

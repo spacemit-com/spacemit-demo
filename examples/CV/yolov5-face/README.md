@@ -27,17 +27,17 @@ sh download_model.sh
 依赖安装:
 
 ```shell
-pip install opencv-python --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install onnxruntime --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install spacemit-ort --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-
+cd python
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
+pip install -r requirements.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
 执行方法:
 
 ```shell
-cd python
-pyhton  test_yolov5-face.py
+python  test_yolov5-face.py
 # 重要参数
 # --model 模型路径，默认为../model/yolov5n-face_320_cut.q.onnx
 # --image 图片路径，默认为../data/test.jpg

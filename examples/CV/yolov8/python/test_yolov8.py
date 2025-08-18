@@ -6,7 +6,7 @@ from utils import  Yolov8Detection
 
 def main():
     parser = argparse.ArgumentParser(description='YOLOv8 ONNX Inference')
-    parser.add_argument('--model', type=str, default='../model/yolov8n.q.onnx', help='Path to the YOLOv8 ONNX model')
+    parser.add_argument('--model', type=str, default='../model/yolov8n_192x320.q.onnx', help='Path to the YOLOv8 ONNX model')
     parser.add_argument('--image', type=str, default='../data/test.jpg', help='Path to the input image')
     parser.add_argument('--use-camera', action='store_true', help='Use camera as input')
     parser.add_argument('--conf-threshold', type=float, default=0.6, help='Confidence threshold')    

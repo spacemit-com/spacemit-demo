@@ -15,7 +15,7 @@ sh download_model.sh
 
 ```
 输入：三通道图像路径
-输出：输出为(1,84,2100)；84维度中0-3为未还原的左上角，右下角坐标，4-83为每个类的得分值；2100为框的数量
+输出：输出为(1,84,2100)；84维度中0-3为未还原的中心点坐标，宽，高;4-83为每个类的得分值；2100为框的数量
 ```
 
 ### 2.1 Python Demo
@@ -24,10 +24,13 @@ sh download_model.sh
 
 ```shell
 sudo apt update && sudo apt install libsleef-dev 
+cd python
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
 pip install sympy==1.13.1 -i https://mirrors.aliyun.com/pypi/simple/
 pip install -r requirement.txt  --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 pip install clip-for-odlabel -i  https://mirrors.aliyun.com/pypi/simple/      
-pip install spacemit-ort --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
 
@@ -35,7 +38,6 @@ pip install spacemit-ort --index-url https://git.spacemit.com/api/v4/projects/33
 执行方法:
 
 ```shell
-cd python
 python test_yolo-world.py --classes people car bottle（用空格符隔开）
 # 其他重要参数
 # -model 默认为../model/yolov8s-worldv2.onnx

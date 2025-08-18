@@ -16,6 +16,7 @@ sh download_model.sh
 tokenizer下载：
 
 ```shell
+cd ..
 sudo apt-get install git-lfs
 git lfs install
 git clone https://ai.gitee.com/hf-models/clip-vit-base-patch32
@@ -26,12 +27,12 @@ git clone https://ai.gitee.com/hf-models/clip-vit-base-patch32
 ```shell
 cd python
 sudo apt update && sudo apt upgrade -y
-sudo apt install python3-pip
-sudo apt install python3-virtualenv
-virtualenv clip_env
+sudo apt-get install libsleef-dev 
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
 pip install sympy==1.13.1 -i https://mirrors.aliyun.com/pypi/simple/   
 pip install -r requirement.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install spacemit-ort --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
 执行方法:

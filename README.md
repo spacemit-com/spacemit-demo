@@ -1,7 +1,8 @@
-# AI Demo Zoo
+# Bianbu AI Demo Zoo
 
 ## 简介
-AI Demo Zoo是基于进迭时空K系列芯片适配的AI应用示例。包含传统CV模型、LLM模型、语音处理模型，同时提供python版本和C++版本。旨在为开发者提供简单易用的模型部署教程。
+
+Bianbu AI Demo Zoo是基于进迭时空K系列芯片适配的AI应用示例。包含传统CV模型、LLM模型、语音处理模型，同时提供python版本和C++版本。旨在为开发者提供简单易用的模型部署教程。
 
 
 
@@ -11,19 +12,19 @@ AI Demo Zoo是基于进迭时空K系列芯片适配的AI应用示例。包含传
 
 |   模型大类   |       具体模型        |   输入大小    | 数据类型 | 帧率(4核) |                       Demo链接                       |
 | :----------: | :-------------------: | :-----------: | :------: | :-------: | :--------------------------------------------------: |
-| EfficientNet |    EfficientNet_b1    | [1,3,224,224] |   int8   |    18     | [EfficientNet](./examples/CV/efficientnet/README.md) |
-|  Inception   |     Inception_v1      | [1,3,224,224] |   int8   |    17     | [Inception_v1](./examples/CV/inception_v1/README.md) |
+| EfficientNet |    EfficientNet_b1    | [1,3,224,224] |   int8   |    23     | [EfficientNet](./examples/CV/efficientnet/README.md) |
+|  Inception   |     Inception_v1      | [1,3,224,224] |   int8   |    18     | [Inception_v1](./examples/CV/inception_v1/README.md) |
 |              |     Inception_v3      | [1,3,229,229] |   int8   |    18     | [Inception_v3](./examples/CV/inception_v3/README.md) |
-|  MobileNet   |      MobileNetv2      | [1,3,224,224] |   int8   |    64     | [MobileNetv2](./examples/CV/mobilenet_v2/README.md)  |
-|    ResNet    |       ResNet50        | [1,3,224,224] |   int8   |    23     |      [ResNet50](./examples/CV/resnet/README.md)      |
-|    YOLOv5    |        YOLOv5n        | [1,3,640,640] |   int8   |     6     |       [yolov5](./examples/CV/yolov5/README.md)       |
-|    YOLOv6    |        YOLOv6n        | [1,3,320,320] |   int8   |    43     |       [yolov6](./examples/CV/yolov6/README.md)       |
-|    YOLOv8    |        YOLOv8n        | [1,3,320,320] |   int8   |    26     |       [yolov8](./examples/CV/yolov8/README.md)       |
-|              |        YOLOv8n        | [1,3,192,320] |   int8   |    33     |       [yolov8](./examples/CV/yolov8/README.md)       |
-|   YOLOv11    |       YOLOv11n        | [1,3,320,320] |   int8   |    21     |      [yolov11](./examples/CV/yolov11/README.md)      |
-|  NanoTrack   |       NanoTrack       | [1,3,255,255] |   int8   |    37     |    [NanoTrack](./examples/CV/nanotrack/README.md)    |
-|   ArcFace    | arcface_mobilefacenet | [1,3,320,320] |   int8   |    23     |      [ArcFace](./examples/CV/arcface/README.md)      |
-| YOLOv5-face  |     YOLOv5n-face      | [1,3,320,320] |   int8   |    18     |  [YOLOv5-face](./examples/CV/yolov5-face/README.md)  |
+|  MobileNet   |      MobileNetv2      | [1,3,224,224] |   int8   |    67     | [MobileNetv2](./examples/CV/mobilenet_v2/README.md)  |
+|    ResNet    |       ResNet50        | [1,3,224,224] |   int8   |    25     |      [ResNet50](./examples/CV/resnet/README.md)      |
+|    YOLOv5    |        YOLOv5n        | [1,3,640,640] |   int8   |     8     |       [yolov5](./examples/CV/yolov5/README.md)       |
+|    YOLOv6    |        YOLOv6n        | [1,3,320,320] |   int8   |    54     |       [yolov6](./examples/CV/yolov6/README.md)       |
+|    YOLOv8    |        YOLOv8n        | [1,3,320,320] |   int8   |    73     |       [yolov8](./examples/CV/yolov8/README.md)       |
+|              |        YOLOv8n        | [1,3,192,320] |   int8   |    106     |       [yolov8](./examples/CV/yolov8/README.md)       |
+|   YOLOv11    |       YOLOv11n        | [1,3,320,320] |   int8   |    35     |      [yolov11](./examples/CV/yolov11/README.md)      |
+|  NanoTrack   |       NanoTrack       | [1,3,255,255] |   int8   |    55     |    [NanoTrack](./examples/CV/nanotrack/README.md)    |
+|   ArcFace    | arcface_mobilefacenet | [1,3,320,320] |   int8   |    27     |      [ArcFace](./examples/CV/arcface/README.md)      |
+| YOLOv5-face  |     YOLOv5n-face      | [1,3,320,320] |   int8   |    21     |  [YOLOv5-face](./examples/CV/yolov5-face/README.md)  |
 
 
 

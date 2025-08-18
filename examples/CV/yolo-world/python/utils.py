@@ -47,7 +47,7 @@ class YOLOWORLD:
 
 
 
-    def infer(self, image, class_embeddings):
+    def infer(self, image):
 
         input_tensor = self.prepare_input(image,  self.input_height)
         class_embeddings = self.prepare_embeddings(self.class_embeddings)

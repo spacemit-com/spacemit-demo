@@ -11,7 +11,7 @@ with open('../data/label.txt', 'r') as f:
 
 def main():    
     parser = argparse.ArgumentParser(description='YOLOv11 ONNX Inference')
-    parser.add_argument('--model', type=str, default='../model/yolo11n_320x320.q.onnx', help='Path to the YOLOv11 ONNX model')
+    parser.add_argument('--model', type=str, default='../model/yolov11n_320x320.q.onnx', help='Path to the YOLOv11 ONNX model')
     parser.add_argument('--image', type=str, default='../data/test.jpg', help='Path to the input image')
     parser.add_argument('--use-camera', action='store_true', help='Use camera as input')
     parser.add_argument('--conf-threshold', type=float, default=0.25, help='Confidence threshold')

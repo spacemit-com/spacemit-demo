@@ -32,7 +32,7 @@ class CLIPSeg:
     # ---------------------------------------------------------------------
     def __call__(self, img_bgr: np.ndarray, prompt: str) -> np.ndarray:
         pix = self._preprocess(img_bgr).astype(np.float32)
-        ids, attn = self._tokenize(prompt)                
+        ids, attn = self._tokenize(prompt)                        
         logits = self.session.run(None, {
             "pixel_values": pix,
             "input_ids": ids,

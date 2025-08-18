@@ -18,12 +18,10 @@ sh download_model.sh
 ```shell
 cd python
 sudo apt update && sudo apt upgrade -y
-sudo apt install python3-pip
-sudo apt install python3-virtualenv
-virtualenv sam_env
-source sam_env/bin/activate
-pip install -r requirement
-pip install spacemit-ort --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
+pip install -r requirements.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
 执行方法：

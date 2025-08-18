@@ -2,27 +2,29 @@
 
 ## 1. 模型和数据获取
 
-### 1.1 模型获取
+### 1.1 模型导出
+
+官方onnx模型导出，可以参考[Ultralytics官方导出文档](https://docs.ultralytics.com/zh/modes/export/#introduction)。
+
+### 1.2 模型获取
 
 ```shell
 cd model
-chmod +x download_model.sh
-./download_model.sh 320 #下载320x320输入的量化模型
-./download_model.sh 192 #下载192x320输入的量化模型
+sh download_model.sh
 ```
 
-320x320的输入的模型保存为yolov8n.q.onnx；192x320保存模型为yolov8n_192x320.q.onnx.
+下载模型保存为yolov8n_192x320.q.onnx,yolov8n_320x320.q.onnx。
 
 
 
-### 1.2 数据获取
+### 1.3 数据获取
 
 ```shell
 cd data
 sh download_data.sh
 ```
 
-执行完后会在当前目录下载测试图片test.jpg和标签文件label.txt
+执行完后会在当前目录下载测试图片test.jpg和标签文件label.txt。
 
 
 
@@ -42,7 +44,7 @@ sh download_data.sh
 sudo apt update && sudo apt upgrade -y
 sudo apt install python3-pip
 sudo apt install python3-virtualenv
-pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+pip install xquant -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 
 ```
 
@@ -57,7 +59,7 @@ pip install xquant==1.2.2 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-h
 ```shell
 tar -xzvf Coco.tar.gz 
 virtualenv xquant_env
-source xuqant_env/bin/activate
+source xquant_env/bin/activate
 cd model 
 sh download_quant_config.sh
 
@@ -99,14 +101,16 @@ python -m xuqant --config xquant_config.json
 依赖安装：
 
 ```shell
-pip install opencv-python==4.11.0 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
-pip install spacemit-ort==1.2.2 --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+cd python
+sudo apt install python3-pip python3-venv
+python3 -m venv name(虚拟环境名) 
+source name/bin/activate 
+pip install -r requirements.txt --index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
 ```
 
-执行流程:
+执行方法:
 
 ```shell
-cd python
 python test_yolov8.py
 
 # 参数说明
@@ -123,6 +127,14 @@ python test_yolov8.py
 
 ### 3.2 c++ demo
 
+依赖安装：
+
+```shell
+sudo apt install libopencv-dev
+```
+
+执行方法：
+
 ```shell
 cd cpp
 mkdir build
@@ -133,4 +145,4 @@ make -j8
 # 注意main.cc中labelFilePath的路径是否正确，默认是../../data/label.txt(要以build目录为基准路径)
 ```
 
-结果保存为result.jpg
+结果保存为result.jpg。

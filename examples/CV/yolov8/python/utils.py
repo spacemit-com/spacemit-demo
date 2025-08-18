@@ -26,6 +26,9 @@ class Yolov8Detection:
         self.input_name = self.session.get_inputs()[0].name
         self.output_names = [output.name for output in self.session.get_outputs()]
         self.input_shape = self.session.get_inputs()[0].shape[2:4]
+        self.conf_threshold = conf_threshold
+        self.iou_threshold = iou_threshold
+
 
 
     def infer(self, image):
@@ -37,15 +40,11 @@ class Yolov8Detection:
         # Run inference
         outputs = self.session.run(self.output_names, {self.input_name: input_tensor})
         
-        output = outputs[0]
-        offset = output.shape[1]
-        anchors = output.shape[2]
         # Postprocess
-        dets = self.postprocess(image,output, anchors, offset, conf_threshold=self.conf_threshold)
-        final_dets = self.nms(dets,self.iou_threshold)
-
+        boxes,classes,scores = self.postprocess(outputs)
+        
         # Draw boxes on image
-        result_image = self.draw_results(image, final_dets,labels)
+        result_image = self.draw_results(boxes,img, classes, scores)
 
         return result_image
     
@@ -78,126 +77,166 @@ class Yolov8Detection:
 
 
     # Postprocess 
-    def postprocess(self,image,output, anchors, offset, conf_threshold):
-        # Get image shape
-        shape = image.shape[:2]
-        # Compute scale ratio
-        r = min(self.input_shape[0] / shape[0], self.input_shape[1] / shape[1])
-        # Compute padding
-        new_unpad = (int(round(shape[1] * r)), int(round(shape[0] * r)))
-        # Compute unpad offset
-        dw, dh = self.input_shape[1] - new_unpad[0], self.input_shape[0] - new_unpad[1]
-        dw /= 2
-        dh /= 2
+    def postprocess(self, output_data):
+        boxes, scores, classes_conf = [], [], []
+        defualt_branch=3
+        pair_per_branch = len(output_data)//defualt_branch
+            
+        for i in range(defualt_branch):
+            boxes.append(self.box_process(output_data[pair_per_branch*i]))
+            classes_conf.append(output_data[pair_per_branch*i+1])
+            scores.append(np.ones_like(output_data[pair_per_branch*i+1][:,:1,:,:], dtype=np.float32))            
 
-        output = output.squeeze()
+        def sp_flatten(_in):
+            ch = _in.shape[1]
+            _in = _in.transpose(0,2,3,1)
+            return _in.reshape(-1, ch)
 
-        # Extract anchor info(x,y,w,h)
-        center_x = output[0, :anchors]
-        center_y = output[1, :anchors]
-        box_width = output[2, :anchors]
-        box_height = output[3, :anchors]
-
-        # Extract class probabilities
-        class_probs = output[4:offset, :anchors]
-
-        # Find the index of the class with the highest probability
-        max_prob_indices = np.argmax(class_probs, axis=0)
-        max_probs = class_probs[max_prob_indices, np.arange(anchors)]
-
-        # Filter out low-confidence detections
-        valid_mask = max_probs > conf_threshold
-        valid_center_x = center_x[valid_mask]
-        valid_center_y = center_y[valid_mask]
-        valid_box_width = box_width[valid_mask]
-        valid_box_height = box_height[valid_mask]
-        valid_max_prob_indices = max_prob_indices[valid_mask]
-        valid_max_probs = max_probs[valid_mask]
-
-        # Compute bounding box coordinates
-        half_width = valid_box_width / 2
-        half_height = valid_box_height / 2
-        x1 = np.maximum(0, ((valid_center_x - half_width) - dw) / r).astype(int)
-        x2 = np.maximum(0, ((valid_center_x + half_width) - dw) / r).astype(int)
-        y1 = np.maximum(0, ((valid_center_y - half_height) - dh) / r).astype(int)
-        y2 = np.maximum(0, ((valid_center_y + half_height) - dh) / r).astype(int)
-
-        # Combine results
-        objects = np.column_stack((x1, y1, x2, y2, valid_max_prob_indices, valid_max_probs)).tolist()
         
-        return objects
+        boxes = [sp_flatten(_v) for _v in boxes]
+        classes_conf = [sp_flatten(_v) for _v in classes_conf]
+        scores = [sp_flatten(_v) for _v in scores]
+        
+        boxes = np.concatenate(boxes)
+        classes_conf = np.concatenate(classes_conf)
+        scores = np.concatenate(scores)
 
+        # filter according to threshold
+        boxes, classes, scores = self.filter_boxes(boxes, scores, classes_conf)
+
+        # nms
+        nboxes, nclasses, nscores = [], [], []
+        for c in set(classes):
+            inds = np.where(classes == c)
+            b = boxes[inds]
+            c = classes[inds]
+            s = scores[inds]
+            keep = self.nms(b, s)
+
+            if len(keep) != 0:
+                nboxes.append(b[keep])
+                nclasses.append(c[keep])
+                nscores.append(s[keep])
+
+        if not nclasses and not nscores:
+            return None, None, None
+
+        boxes = np.concatenate(nboxes)
+        classes = np.concatenate(nclasses)
+        scores = np.concatenate(nscores)
+
+
+        return boxes, classes, scores
+
+    def filter_boxes(self, boxes, box_confidences, box_class_probs):
+        """Filter boxes with object threshold.
+        """
+        box_confidences = box_confidences.reshape(-1)
+
+
+        class_max_score = np.max(box_class_probs, axis=-1)
+        classes = np.argmax(box_class_probs, axis=-1)
+
+        _class_pos = np.where(class_max_score* box_confidences >= self.conf_threshold)
+        scores = (class_max_score* box_confidences)[_class_pos]
+
+        boxes = boxes[_class_pos]
+        classes = classes[_class_pos]
+
+        return boxes, classes, scores
+
+
+    def box_process(self,position):        
+        grid_h, grid_w = position.shape[2:4]
+        col, row = np.meshgrid(np.arange(0, grid_w), np.arange(0, grid_h))
+        col = col.reshape(1, 1, grid_h, grid_w)
+        row = row.reshape(1, 1, grid_h, grid_w)
+        grid = np.concatenate((col, row), axis=1)
+        stride = np.array([ self.input_shape[0]//grid_h,  self.input_shape[1]//grid_w]).reshape(1,2,1,1)
+        
+        position = self.dfl(position)
+        box_xy  = grid +0.5 -position[:,0:2,:,:]
+        box_xy2 = grid +0.5 +position[:,2:4,:,:]
+        xyxy = np.concatenate((box_xy*stride, box_xy2*stride), axis=1)
+
+        return xyxy
+
+    def dfl(self, position):
+        # Distribution Focal Loss DFL)
+
+        n, c, h, w = position.shape
+        p_num = 4
+        mc = c // p_num
+        y = position.reshape(n, p_num, mc, h, w)
+        y_max = np.max(y, axis=2, keepdims=True)
+        y_exp = np.exp(y - y_max)
+        y_sum = np.sum(y_exp, axis=2, keepdims=True)
+        y = y_exp / y_sum
+        acc_matrix = np.arange(mc, dtype=np.float32).reshape(1, 1, mc, 1, 1)
+        y = (y * acc_matrix).sum(axis=2)
+
+        return y
 
     # Non-maximum suppression
-    def nms(self, dets, iou_threshold=0.45):
-        if len(dets) == 0:
-            return np.empty((0, 6))
-        
-        dets_array = np.array(dets)
-        # Divide detections into classes
-        unique_labels = np.unique(dets_array[:, 4])
-        final_dets = []
-
-        for label in unique_labels:
-            # Get detections of the current class        
-            mask = dets_array[:, 4] == label
-            dets_class = dets_array[mask]
-
-            # Sort detections by score in descending order
-            order = np.argsort(-dets_class[:, 5])
-            dets_class = dets_class[order]
-
-            # Perform non-maximum suppression
-            keep = []
-            while dets_class.shape[0] > 0:
-                
-                keep.append(dets_class[0])
-                if dets_class.shape[0] == 1:
-                    break
-                ious = self.calculate_iou(keep[-1], dets_class[1:])            
-                dets_class = dets_class[1:][ious < iou_threshold]
-            
-            final_dets.extend(keep)
-
-        return final_dets
-
-    # Calculate IoU between two boxes
-    def calculate_iou(self,box, boxes):
+    def nms(self, boxes, scores):
+        """Suppress non-maximal boxes.
+        # Returns
+            keep: ndarray, index of effective boxes.
         """
-        计算一个框与一组框的 IoU
-        :param box: 单个框 [x1, y1, x2, y2]
-        :param boxes: 一组框 [N, 4]
-        :return: IoU 值 [N]
-        """
-        # Compute intersection areas
-        x1 = np.maximum(box[0], boxes[:, 0])
-        y1 = np.maximum(box[1], boxes[:, 1])
-        x2 = np.minimum(box[2], boxes[:, 2])
-        y2 = np.minimum(box[3], boxes[:, 3])
-        inter_area = np.maximum(0, x2 - x1) * np.maximum(0, y2 - y1)
+        x = boxes[:, 0]
+        y = boxes[:, 1]
+        w = boxes[:, 2] - boxes[:, 0]
+        h = boxes[:, 3] - boxes[:, 1]
 
-        # Compute union areas
-        box_area = (box[2] - box[0]) * (box[3] - box[1])
-        boxes_area = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
-        union_area = box_area + boxes_area - inter_area
+        areas = w * h
+        order = scores.argsort()[::-1]
 
-        # Return intersection over union
-        return inter_area / union_area
+        keep = []
+        while order.size > 0:
+            i = order[0]
+            keep.append(i)
+
+            xx1 = np.maximum(x[i], x[order[1:]])
+            yy1 = np.maximum(y[i], y[order[1:]])
+            xx2 = np.minimum(x[i] + w[i], x[order[1:]] + w[order[1:]])
+            yy2 = np.minimum(y[i] + h[i], y[order[1:]] + h[order[1:]])
+
+            w1 = np.maximum(0.0, xx2 - xx1 + 0.00001)
+            h1 = np.maximum(0.0, yy2 - yy1 + 0.00001)
+            inter = w1 * h1
+
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)
+            inds = np.where(ovr <= self.iou_threshold)[0]
+            order = order[inds + 1]
+        keep = np.array(keep)
+        return keep    
 
 
 
     # Draw boxes on image
-    def draw_results(self, image, dets, class_names):
-        image = image.copy()
+    def draw_results(self, box, src_img, classes, scores):
+        bbox = box.copy()
+        shape = src_img.shape[:2]
+        r = min(self.input_shape[0] / shape[0], self.input_shape[1] / shape[1])
+        new_unpad = (int(round(shape[1] * r)), int(round(shape[0] * r)))
+        dw, dh = self.input_shape[1] - new_unpad[0], self.input_shape[0] - new_unpad[1]
+        dw /= 2
+        dh /= 2
+        bbox[:, 0] = (bbox[:, 0] - dw) / r
+        bbox[:, 0] = np.clip(bbox[:, 0], 0, shape[1])
+        bbox[:, 1] = (bbox[:, 1] - dh) / r
+        bbox[:, 1] = np.clip(bbox[:, 1], 0, shape[0])
+        bbox[:, 2] = (bbox[:, 2] - dw) / r
+        bbox[:, 2] = np.clip(bbox[:, 2], 0, shape[1])
+        bbox[:, 3] = (bbox[:, 3] - dh) / r
+        bbox[:, 3] = np.clip(bbox[:, 3], 0, shape[0])
 
-        for det in dets:
-            x1, y1, x2, y2, label, score = det
-            x1 = int(x1)
-            y1 = int(y1)
-            x2 = int(x2)
-            y2 = int(y2)
-        
-            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(image, f'{class_names[int(label)]}: {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        for i in range(len(bbox)):
+            class_label = labels[classes[i]]
+            score = scores[i]
+            box = bbox[i]
+            cv2.rectangle(src_img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
+            cv2.putText(src_img, class_label + " " + str(round(score, 2)), (int(box[0]), int(box[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
-        return image
+
+        return src_img

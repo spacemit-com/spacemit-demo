@@ -1,64 +1,53 @@
 #include "yolov8.h"
-#include <onnxruntime_cxx_api.h>
-#include "spacemit_ort_env.h"
 
 
 
 // Image preprocess
 cv::Mat Preprocess(
     const cv::Mat& image, int inputWidth , int inputHeight ) {
-
+    // Input validation
     if (image.empty() || inputWidth <= 0 || inputHeight <= 0) {
-        std::cerr << "Error: Input image is empty or destination size is invalid." << std::endl;
         return cv::Mat();
     }
     
-    // Get the original shape of the image
-    int height = image.rows;
-    int width = image.cols;
-    cv::Vec3b pad_color(0, 0, 0);
-
-    // Calculate the scaling ratio
-    double r = std::min(static_cast<double>(inputHeight) / height, static_cast<double>(inputWidth) / width);
-    // Compute padding
-    double new_unpad_h = std::round(height * r);
-    double new_unpad_w = std::round(width * r);
-    int dw = inputWidth - static_cast<int>(new_unpad_w);
-    int dh = inputHeight - static_cast<int>(new_unpad_h);
-    dw /= 2;
-    dh /= 2;
-
-    // Resize the image if necessary
-    cv::Mat resized_image;
-    if (height != new_unpad_h || width != new_unpad_w) {
-        cv::resize(image, resized_image, cv::Size(new_unpad_w, new_unpad_h), 0, 0, cv::INTER_LINEAR);
+    const int height = image.rows;
+    const int width = image.cols;
+    
+    // Calculate scaling ratio
+    const double scale = std::min(static_cast<double>(inputHeight) / height,
+                                 static_cast<double>(inputWidth) / width);
+    
+    // Calculate new dimensions and padding
+    const int new_h = static_cast<int>(std::round(height * scale));
+    const int new_w = static_cast<int>(std::round(width * scale));
+    const int pad_h = (inputHeight - new_h) / 2;
+    const int pad_w = (inputWidth - new_w) / 2;
+    
+    cv::Mat processed_image;
+    
+    // Resize if needed
+    if (new_h != height || new_w != width) {
+        cv::resize(image, processed_image, cv::Size(new_w, new_h));
     } else {
-        resized_image = image.clone();
+        processed_image = image;
     }
-
-    // Convert BGR to RGB
-    cv::Mat rgb_image;
-    cv::cvtColor(resized_image, rgb_image, cv::COLOR_BGR2RGB);
-
-    // Add border
-    int top = static_cast<int>(std::round(dh - 0.1));
-    int bottom = static_cast<int>(std::round(dh + 0.1));
-    int left = static_cast<int>(std::round(dw - 0.1));
-    int right = static_cast<int>(std::round(dw + 0.1));
-    cv::Mat padded_image;
-
-    cv::copyMakeBorder(rgb_image, padded_image, top, bottom, left, right, cv::BORDER_CONSTANT, pad_color);
-                
-
-    cv::Mat blob;
-    blob = cv::dnn::blobFromImage(padded_image,1.0 / 255.0, cv::Size(inputWidth, inputHeight), cv::Scalar(0, 0, 0), false, false,CV_32F);
-
-    return blob;
+    
+    // Add padding
+    cv::copyMakeBorder(processed_image, processed_image, pad_h, inputHeight - new_h - pad_h,
+                       pad_w, inputWidth - new_w - pad_w, cv::BORDER_CONSTANT, cv::Scalar(0));
+    
+    // Create blob with automatic BGR to RGB conversion
+    return cv::dnn::blobFromImage(processed_image, 1.0/255.0, 
+                                 cv::Size(inputWidth, inputHeight), 
+                                 cv::Scalar(0, 0, 0), true, false, CV_32F); // true = swapRB
 
 }
 
 // Draw results
-void DrawResults(cv::Mat& image, const std::vector<Object>& dets, const std::vector<std::string>& labels) {        
+void DrawResults(cv::Mat& image, const std::vector<Object>& dets) {        
+    //Get labels
+    std::vector<std::string> labels = ReadLabels();
+
     int image_h = image.rows;
     int image_w = image.cols;
 
@@ -76,6 +65,80 @@ void DrawResults(cv::Mat& image, const std::vector<Object>& dets, const std::vec
         cv::putText(image, labelText, cv::Point(x1, y1 - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);        
     }
 }
+
+void Get_Dets(const cv::Mat& image, const float* boxes, const float* scores, const float* score_sum, std::vector<int64_t> dims, int tensor_width, int tensor_height, std::vector<Object>& objects) {
+    int grid_w = static_cast<int>(dims[2]);
+    int grid_h = static_cast<int>(dims[3]);
+    int anchors_per_branch = grid_w * grid_h;
+    float scale_w = static_cast<float>(tensor_width) / static_cast<float>(grid_w);
+    float scale_h = static_cast<float>(tensor_height) / static_cast<float>(grid_h);
+
+    int orig_height = image.rows;
+    int orig_width = image.cols;
+    float scale2orign = fmin(static_cast<float>(tensor_height) / static_cast<float>(orig_width), static_cast<float>(tensor_width) / static_cast<float>(orig_height));
+    int pad_h = static_cast<int>((tensor_width - orig_height * scale2orign) / 2);
+    int pad_w = static_cast<int>((tensor_height - orig_width * scale2orign) / 2);
+
+    for (int anchor_idx = 0; anchor_idx < anchors_per_branch; anchor_idx++) {
+        if (score_sum[anchor_idx] < conf_threshold) {
+            continue;
+        }
+
+        // get max score and class
+        float max_score = -1.0f;
+        int classId = -1;
+        for (int class_idx = 0; class_idx < classNum; class_idx++) {
+            size_t score_offset = class_idx * anchors_per_branch + anchor_idx;
+            if ((scores[score_offset] > conf_threshold) & (scores[score_offset] > max_score)) { // 可能有越界的情况
+                max_score = *(scores + score_offset);
+                classId = class_idx;
+            } else {
+                continue;
+            }
+        }
+        if (classId >= 0) { // detect object
+            Object object = Dfl(boxes, anchor_idx, anchors_per_branch, grid_h, scale_w, scale_h, scale2orign, pad_w, pad_h);
+            object.class_id = classId;
+            object.score = max_score;
+            objects.push_back(object);
+        } else { // no object
+            continue;
+        }
+    }
+  
+};
+
+Object Dfl(const float* boxes, int anchor_idx, int anchors,  int grid_w, float scale_w, float scale_h, float scale2orign, int pad_w, int pad_h) {
+    float xywh[4] = {0, 0, 0, 0};
+    for (int i = 0; i < 4; i++) {
+        float exp_sum = 0.0f;
+
+        size_t offset = i * dfl_len * anchors + anchor_idx; // 起始位置
+        float exp_dfl[dfl_len];
+        for (int dfl_idx = 0; dfl_idx < dfl_len; dfl_idx++) {
+            exp_dfl[dfl_idx] = exp(boxes[offset]);
+            exp_sum += exp_dfl[dfl_idx];
+            offset += anchors;
+        }
+
+        offset = i * dfl_len * anchors + anchors; // reset
+        for (int dfl_idx = 0; dfl_idx < dfl_len; dfl_idx++) {
+            xywh[i] += (exp_dfl[dfl_idx] / exp_sum) * dfl_idx;
+            offset += anchors;
+        }
+    }
+    int h_idx = anchor_idx / grid_w;
+    int w_idx = anchor_idx % grid_w;
+
+    Object object;
+    object.x1 = ((w_idx - xywh[0] + 0.5f) * scale_w - pad_w) / scale2orign;
+    object.y1 = ((h_idx - xywh[1] + 0.5f) * scale_h - pad_h) / scale2orign;
+    object.x2 = ((w_idx + xywh[2] + 0.5f) * scale_w - pad_w) / scale2orign;
+    object.y2 = ((h_idx + xywh[3] + 0.5f) * scale_h - pad_h) / scale2orign;
+
+    return object;
+}
+
 
 // Compute IOU between two detections
 float Calculate_Iou(const Object& det1, const Object& det2) {
@@ -99,7 +162,7 @@ float Calculate_Iou(const Object& det1, const Object& det2) {
 }
 
 // Non-maximum suppression
-std::vector<Object> Nms(const std::vector<Object>& dets, float iou_threshold = 0.45) {
+std::vector<Object> Nms(const std::vector<Object>& dets) {
     if (dets.empty()) {
         return std::vector<Object>();
     }
@@ -139,7 +202,7 @@ std::vector<Object> Nms(const std::vector<Object>& dets, float iou_threshold = 0
             std::vector<Object> new_dets_class;
         
             for (size_t i = 1; i < dets_class.size(); ++i) {
-                float iou = Calculate_iou(keep.back(), dets_class[i]);
+                float iou = Calculate_Iou(keep.back(), dets_class[i]);
                 if (iou < iou_threshold) {
                     new_dets_class.push_back(dets_class[i]);
                 }
@@ -154,7 +217,7 @@ std::vector<Object> Nms(const std::vector<Object>& dets, float iou_threshold = 0
 }
 
 // Read labels from file
-std::vector<std::string> ReadLabels(const std::string& labelFilePath) {
+std::vector<std::string> ReadLabels() {
     std::vector<std::string> labels;
     std::ifstream labelFile(labelFilePath);
     if (labelFile.is_open()) {
@@ -168,63 +231,23 @@ std::vector<std::string> ReadLabels(const std::string& labelFilePath) {
 }
 
 // Postprocess output tensor to get detection results
-std::vector<Object> Postprocess(const cv::Size& input_size, const float* output, int anchors, int offset, float conf_threshold, float iou_threshold, int des_width,int des_height) {
-    std::vector<Object> objects;            
-    float ratio = std::min(static_cast<float>(des_width) / static_cast<float>(input_size.width), static_cast<float>(des_height) / static_cast<float>(input_size.height));
-    int unpad_w = std::round(input_size.width * ratio);
-    int unpad_h = std::round(input_size.height * ratio);
-
-    float dw = (des_width - unpad_w) / 2.0;
-    float dh = (des_height - unpad_h) / 2.0;
-    
-    for (int j = 0; j < anchors; ++j) {
-        float max_score = -1.0f;
-        int max_index = -1;
-        for (int prob = 4; prob < offset; ++prob) {
-            // Get the score for the current anchor and class
-            int index = prob * anchors + j;
-            float score = output[index];
-            if (score > max_score) {                
-                max_score = score;
-                max_index = prob;
-            }
-
-        }        
+std::vector<Object> Postprocess(cv::Mat &image, std::vector<Ort::Value>& outputs, size_t output_num, const int inputWidth, const int inputHeight, std::vector<Object> &objects) {
+    for (int i = 0; i < int(output_num / 3); i++) {        
+        const float* boxes = outputs[i * 3].GetTensorMutableData<float>(); // get data
+        const float* scores = outputs[i * 3 + 1].GetTensorMutableData<float>();
+        const float* score_sum = outputs[i * 3 + 2].GetTensorMutableData<float>();
+        std::vector<int64_t> dims = outputs[i * 3].GetTensorTypeAndShapeInfo().GetShape(); // 输出的tensor类型和维度            
+        Get_Dets(image, boxes, scores, score_sum, dims, inputHeight, inputWidth, objects); // swap width and height
         
-        if (max_score > conf_threshold) {
-            // Decoder
-            float half_width = output[2 * anchors + j] / 2;
-            float half_height = output[3 * anchors + j] / 2;            
-            int x1 = (output[j] - half_width - dw) / ratio;        
-            x1 = std::max(0,x1);
-            int y1 = (output[anchors + j] - half_height - dh) / ratio;
-            y1 = std::max(0,y1);
-            int x2 = (output[j] + half_width - dw) / ratio;
-            x2 = std::max(0,x2);
-            int y2 = (output[anchors + j] + half_height - dh) / ratio;
-            y2 = std::max(0,y2);
-           
-            Object obj;
-            obj.x1 = x1;
-            obj.y1 = y1;
-            obj.x2 = x2;
-            obj.y2 = y2;
-            obj.class_id = max_index - 4;
-            obj.score = max_score;
-            objects.push_back(obj);
-
-        }
-    }        
+    }
     
-    return Nms(objects, iou_threshold);
+    return Nms(objects);
 
 }
 
 
 
-cv::Mat Yolov8Inference(cv::Mat& image, const std::string& modelPath, const std::string& labelFilePath, float conf_threshold, float iou_threshold) {
-    // Load labels
-    std::vector<std::string> labels = ReadLabels(labelFilePath);
+cv::Mat Yolov8Inference(cv::Mat& image, const std::string& modelPath) {
 
     // Initialize ONNX runtime environment and session
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "YOLOv8Inference");
@@ -267,6 +290,7 @@ cv::Mat Yolov8Inference(cv::Mat& image, const std::string& modelPath, const std:
         output_node_names_[i] = output_names_[i].c_str();
     }
 
+    
     // Run preprocess
     cv::Mat inputTensor = Preprocess(image, inputWidth, inputHeight);
     
@@ -278,21 +302,12 @@ cv::Mat Yolov8Inference(cv::Mat& image, const std::string& modelPath, const std:
     // Run inference
     std::vector<Ort::Value> outputs = session_.Run(Ort::RunOptions{nullptr}, input_node_names_.data(), &input_tensor, 1, output_node_names_.data(), output_node_names_.size());
     
-    
-    // Get output data
-    float* dets_data = outputs[0].GetTensorMutableData<float>();
-
-
-    auto dets_tensor_info = outputs[0].GetTensorTypeAndShapeInfo();
-    std::vector<int64_t> dets_dims = dets_tensor_info.GetShape();    
-    int offset = dets_dims[1];
-    int anchors = dets_dims[2];
-    
+    std::vector<Object> objects;
     //Run postprocess
-    std::vector<Object> detected_objects = Postprocess(image.size(),dets_data, anchors, offset, conf_threshold, iou_threshold, inputWidth, inputHeight);
+    std::vector<Object> detected_objects = Postprocess(image, outputs, num_outputs_, inputWidth, inputHeight, objects);
 
     // Draw results
-    DrawResults(image, detected_objects, labels);
+    DrawResults(image, detected_objects);
 
     return image;
 }

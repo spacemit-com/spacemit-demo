@@ -16,9 +16,12 @@ struct Object {
 };
 
 
+const std::string labelFilePath = "../../data/label.txt";
+const float conf_threshold = 0.4;
+
 
 
 cv::Mat Preprocess(const cv::Mat& image, int inputWidth , int inputHeight);
-void DrawResults(cv::Mat& image, const std::vector<std::vector<float>>& dets,float* scores, int* labels_pred, const std::vector<std::string>& labels, float conf_threshold = 0.4);
-std::vector<std::string> ReadLabels(const std::string& labelFilePath);
-cv::Mat Yolov6Inference(cv::Mat& image, const std::string& modelPath, const std::string& labelFilePath, float conf_threshold);
+void DrawResults(cv::Mat& image, const std::vector<std::vector<float>>& dets,float* scores, int* labels_pred, const std::vector<std::string>& labels);
+std::vector<std::string> ReadLabels();
+cv::Mat Yolov6Inference(cv::Mat& image, const std::string& modelPath);
