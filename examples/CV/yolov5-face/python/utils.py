@@ -40,7 +40,7 @@ class Detection:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = img.transpose(2, 0, 1).copy()
 
-        img = (img / 255.0).astype(np.float32)  # 0 - 255 to 0.0 - 1.0
+        img = cv2.normalize(img, None, 0, 1, cv2.NORM_MINMAX,dtype=cv2.CV_32F)
         img = img[None]
         return img
 

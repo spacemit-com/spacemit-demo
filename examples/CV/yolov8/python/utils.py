@@ -44,7 +44,7 @@ class Yolov8Detection:
         boxes,classes,scores = self.postprocess(outputs)
         
         # Draw boxes on image
-        result_image = self.draw_results(boxes,img, classes, scores)
+        result_image = self.draw_results(img, boxes, classes, scores)
 
         return result_image
     
@@ -70,7 +70,7 @@ class Yolov8Detection:
 
 
         
-        image = image.astype(np.float32) / 255.0
+        image = cv2.normalize(image, None, 0, 1, cv2.NORM_MINMAX,dtype=cv2.CV_32F)        
         image = np.transpose(image, (2, 0, 1))   
         image = np.expand_dims(image, axis=0)    
         return image
@@ -214,8 +214,8 @@ class Yolov8Detection:
 
 
     # Draw boxes on image
-    def draw_results(self, box, src_img, classes, scores):
-        bbox = box.copy()
+    def draw_results(self, src_img, boxes, classes, scores):
+        bbox = boxes.copy()
         shape = src_img.shape[:2]
         r = min(self.input_shape[0] / shape[0], self.input_shape[1] / shape[1])
         new_unpad = (int(round(shape[1] * r)), int(round(shape[0] * r)))

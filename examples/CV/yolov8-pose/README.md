@@ -39,3 +39,36 @@ python test_yolov8_pose.py
 # --image 默认为 ../data/test.jpg
 ```
 
+### 2.2 C++ Demo
+
+依赖安装:
+
+```shell
+# 安装 OpenCV 4
+sudo apt update
+sudo apt install libopencv-dev
+
+```
+
+编译方法:
+
+```shell
+cd cpp
+mkdir build && cd build
+cmake ..
+make -j8
+```
+
+执行方法:
+
+```shell
+./yolov8_pose --model ../model/yolov8n-pose.q.onnx --image ../data/test.jpg
+```
+
+参数说明:
+- `--model`: ONNX模型文件路径 (支持FP32和INT8量化模型)
+- `--image`: 输入图像路径
+
+输出:
+- 程序会在当前目录生成 `result.jpg` 文件，包含检测到的人体关键点可视化结果
+

@@ -6,7 +6,7 @@ from PIL import Image
 
 
 def preprocess(img):
-    img = img / 255.
+    img = cv2.normalize(img, None, 0, 1, cv2.NORM_MINMAX,dtype=cv2.CV_32F)    
     img = cv2.resize(img, (256, 256))
     h, w = img.shape[0], img.shape[1]
     y0 = (h - 224) // 2

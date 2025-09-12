@@ -1,0 +1,30 @@
+{
+    "model_parameters": {
+        "onnx_model": "yolov8n_det_320.q.onnx",
+        "working_dir": "。/tmp",
+        "skip_onnxsim": false
+    },
+    "calibration_parameters": {
+        "calibration_type":"minmax",
+        "input_parametres": [
+            {
+                "mean_value": [
+                    0,
+                    0,
+                    0
+                ],
+                "std_value": [
+                    255,
+                    255,
+                    255
+                ],
+                "color_format": "rgb",
+                "data_list_path": "yolov8/data/calib_list.txt"
+            }
+        ]
+    },
+    "quantization_parameters": {
+            "finetune_level": 3,
+            "max_percentile":0.9995
+    }
+}

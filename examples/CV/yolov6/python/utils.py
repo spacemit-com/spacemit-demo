@@ -60,7 +60,7 @@ class Yolov6Detection:
     def preprocess(self, image):        
         image = cv2.resize(image, self.input_shape)        
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)        
-        image = image.astype(np.float32) / 255.0        
+        image = cv2.normalize(image, None, 0, 1, cv2.NORM_MINMAX,dtype=cv2.CV_32F)        
         image = np.transpose(image, (2, 0, 1))
         image = np.expand_dims(image, axis=0)
         return image

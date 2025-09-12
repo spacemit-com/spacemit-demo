@@ -6,12 +6,12 @@ from utils import  YOLOWORLD
 
 def main():
     parser = argparse.ArgumentParser(description='YOLO-World ONNX Inference')
-    parser.add_argument('--model', type=str, default='../model/yolov8s-worldv2.onnx', help='Path to the YOLOv8 ONNX model')
+    parser.add_argument('--model', type=str, default='../model/yolov8s-worldv2.q.onnx', help='Path to the YOLOv8 ONNX model')
     parser.add_argument('--image', type=str, default='../data/test.jpg', help='Path to the input image')
     parser.add_argument('--use-camera', action='store_true', help='Use camera as input')
     parser.add_argument('--conf-threshold', type=float, default=0.2, help='Confidence threshold')    
     parser.add_argument('--iou-threshold', type=float, default=0.45, help='Confidence threshold')
-    parser.add_argument('--classes', nargs='+', type=str, default=['people'],help='Input class names：people car telephone')
+    parser.add_argument('--classes', nargs='+', type=str, default=['people'],help='Input class names:people car telephone')
 
     args = parser.parse_args()
 

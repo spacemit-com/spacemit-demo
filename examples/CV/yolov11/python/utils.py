@@ -71,7 +71,7 @@ class Yolov11Detection:
 
 
         
-        image = image.astype(np.float32) / 255.0
+        image = cv2.normalize(image, None, 0, 1, cv2.NORM_MINMAX,dtype=cv2.CV_32F)        
         image = np.transpose(image, (2, 0, 1))   
         image = np.expand_dims(image, axis=0)    
         return image

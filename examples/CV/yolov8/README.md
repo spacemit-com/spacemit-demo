@@ -13,7 +13,7 @@ cd model
 sh download_model.sh
 ```
 
-下载模型保存为yolov8n_192x320.q.onnx,yolov8n_320x320.q.onnx。
+下载模型保存为yolov8n_192x320.q.onnx,yolov8n_320x320.q.onnx。(都是非官方模型量化后的模型)
 
 
 
@@ -34,65 +34,55 @@ sh download_data.sh
 
 **Note**:注意请在x86平台就行模型量化
 
+###  2.1 量化步骤
 
+可参照该教程完成量化：https://bianbu.spacemit.com/brdk/Advanced_development/6.1_Model_Quantization
 
-### 2.1 量化工具安装
+### 2.2 官方模型量化
 
-量化浮点模型需要安装我们的Xquant量化工具，安装步骤如下：
+参照2.1即可
 
-```shell
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3-pip
-sudo apt install python3-virtualenv
-pip install xquant -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  --extra-index-url https://git.spacemit.com/api/v4/projects/33/packages/pypi/simple
+(1,84,2100)中84维度中0-3为未还原的左上角，右下角坐标，4-83为每个类的得分值；2100为框的数量。
 
-```
+<center>
+    <img style="border-radius: 0.3125em;
+    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
+    src="images/1.jpg">
+    <br>
+    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
+    display: inline-block;
+    color: #999;
+    padding: 2px;"> 图1 官方onnx模型输出(模型输入192*320) </div>
+</center>
 
+### 2.3 非官方模型量化
 
+我们非常推荐使用这种方式量化，量化脚本为molde/xquant_config.json。
 
-### 2.2 转换浮点模型为量化模型
+下图为非官方模型(模型输入的输出结果：
+
+([1,64,24,40],[1,80,24,40],[1,1,24,40])代表在一个检测头上的为经过dfl的框坐标，框的每个类的概率，框所有类概率总和。
+
+<center>
+    <img style="border-radius: 0.3125em;
+    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
+    src="images/2.png">
+    <br>
+    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
+    display: inline-block;
+    color: #999;
+    padding: 2px;"> 图2 非官方onnx模型输出（模型输入192*320) </div>
+</center>
+
+### 2.4 相关资源
 
 [Calibration数据下载](https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/Datasets/Coco/Coco.tar.gz)
 
 
 
-```shell
-tar -xzvf Coco.tar.gz 
-virtualenv xquant_env
-source xquant_env/bin/activate
-cd model 
-sh download_quant_config.sh
-
-```
-
-执行完后会下载xquant_config.json和yolov8_preprocess.py,修改xquant_config.json文件中以下参数:
-
-"onnx_model": 浮点onnx模型的路径
-
-"data_list_path”: 具体的calib_img_list.txt路径(在解压的Coco.tar.gz的目录中)
-
-"preprocess_file":自定义预处理文件(yolov8_preprocess.py)和指定函数
-
-"working_dir": 为输出文件保存路径(默认temp，可选)
-
-执行下面命令：
-
-```shell
-python -m xuqant --config xquant_config.json
-```
-
-最终量化模型保存在working_dir目录下，后缀为.q.onnx。
-
 
 
 ## 3. Demo
-
-输入输出数据说明：
-
-```
-输入：三通道图像路径
-输出：输出为(1,84,2100)；84维度中0-3为未还原的左上角，右下角坐标，4-83为每个类的得分值；2100为框的数量
-```
 
 
 

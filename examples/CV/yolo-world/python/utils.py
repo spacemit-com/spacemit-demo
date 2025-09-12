@@ -2,13 +2,16 @@ import cv2 as cv
 import numpy as np
 import onnxruntime as ort
 #import spacemit_ort
-import torch
+
 import clip
 
 
 class TextEmbedder:
-    def __init__(self, model_name="../model/ViT-B-32.pt", device="cpu"):
-        self.clip_model, _ = clip.load(model_name, device=device)
+    def __init__(self, model_name="../model/clip_text.onnx"):        
+        self.session = ort.InferenceSession(model_name, providers=["CPUExecutionProvider"])
+        self.input_names = [self.session.get_inputs()[i].name for i in range(len(self.session.get_inputs()))]
+        self.output_names = [self.session.get_outputs()[i].name for i in range(len(self.session.get_outputs()))]
+        
 
     def __call__(self, text):
         return self.embed_text(text)
@@ -17,22 +20,27 @@ class TextEmbedder:
         if not isinstance(text, list):
             text = [text]
 
-        text_token = clip.tokenize(text)
-        txt_feats = [self.clip_model.encode_text(token).detach() for token in text_token.split(1)]
-        txt_feats = torch.cat(txt_feats, dim=0)
-        txt_feats /= txt_feats.norm(dim=1, keepdim=True)
-        txt_feats = txt_feats.unsqueeze(0)
+        text_token = clip.tokenize(text)        
+
+        np_text_token = np.array(text_token, dtype=np.int64)                
+        outputs = self.session.run(self.output_names,
+                                   {self.input_names[0]: np_text_token})
+        
+        txt_feats = np.concatenate(outputs, axis=0)
+        norms = np.linalg.norm(txt_feats, axis=1, keepdims=True)
+        txt_feats /= norms        
+        txt_feats = np.expand_dims(txt_feats, axis=0)
 
         return txt_feats
 
 class YOLOWORLD:
-    def __init__(self, model_path,conf_threshold=0.2,iou_threshold=0.3, device="cpu"):        
+    def __init__(self, model_path,conf_threshold=0.2,iou_threshold=0.3):        
         
         session_options = ort.SessionOptions()
         session_options.intra_op_num_threads = 4        
         self.session = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
         self.names = []
-        self.text_embedder = TextEmbedder(device=device)
+        self.text_embedder = TextEmbedder()
         self.class_embeddings = None
 
         self.conf = conf_threshold
@@ -47,13 +55,15 @@ class YOLOWORLD:
 
 
 
-    def infer(self, image):
+    def infer(self, image, class_embeddings):
 
         input_tensor = self.prepare_input(image,  self.input_height)
         class_embeddings = self.prepare_embeddings(self.class_embeddings)
 
+
         outputs = self.session.run(self.output_names,
                                    {self.input_names[0]: input_tensor, self.input_names[1]: class_embeddings})
+
         
         boxes, scores, class_ids  = self.process_output(outputs, self.conf, self.input_height, self.iou)
         result_image = self.draw_results(image, boxes, scores, class_ids)
@@ -75,7 +85,7 @@ class YOLOWORLD:
 
 
     def set_classes(self, classes):
-        self.names = classes
+        self.names = classes    
         self.class_embeddings = self.text_embedder(classes)
 
 
@@ -93,11 +103,17 @@ class YOLOWORLD:
 
         return input_tensor
 
-    def prepare_embeddings(self, class_embeddings):
-        if class_embeddings.shape[1] != self.num_classes:
-            class_embeddings = torch.nn.functional.pad(class_embeddings, (0, 0, 0, self.num_classes - class_embeddings.shape[1]), mode='constant', value=0)
 
-        return class_embeddings.cpu().numpy().astype(np.float32)
+    def prepare_embeddings(self, class_embeddings):        
+        if class_embeddings.shape[1] != self.num_classes:
+            delta = self.num_classes - class_embeddings.shape[1]
+            class_embeddings = np.pad(
+                class_embeddings,
+                pad_width=((0, 0), (0, delta), (0, 0)),
+                mode='constant',
+                constant_values=0
+            )
+        return class_embeddings.astype(np.float32)
 
 
     def process_output(self, output, conf, imgsz, iou):

@@ -1,6 +1,0 @@
-numpy==1.26.2 
-opencv-python
-onnxruntime
-torch
-transformers
-

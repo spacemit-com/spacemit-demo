@@ -6,7 +6,7 @@ from PIL import Image
 
 
 def preprocess(img):
-    img = img / 255.
+    img = cv2.normalize(img, None, 0, 1, cv2.NORM_MINMAX,dtype=cv2.CV_32F)    
     img = cv2.resize(img, (224, 224))
     img = (img - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]    
     img = np.transpose(img, axes=[2, 0, 1])
