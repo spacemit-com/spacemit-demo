@@ -44,3 +44,21 @@ python test_yolo-world.py --classes people car bottle（用空格符隔开）
 # --image 默认为 ../data/test.jpg
 ```
 
+### 2.2 c++ Demo
+
+依赖安装：
+
+```shell
+sudo apt install libopencv-dev
+```
+
+执行方法：
+```shell
+
+cd cpp
+mkdir build
+cd build
+cmake ..
+make -j8
+
+./yolo_world_demo --clip_model ../../model/clip_text.onnx --yolo_model ../../model/yolov8s-worldv2.q.onnx  --image ../../data/bus.jpg --text bus,person,shoes

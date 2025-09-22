@@ -1,9 +1,9 @@
-#include"yolo_word.hpp"
+#include"yoloe.h"
 #include <cmath>
 #include <chrono>
 #include <iostream>
-YOLO_WORLD::YOLO_WORLD(const std::string& yolo_world_model_path)
-    : env_(ORT_LOGGING_LEVEL_WARNING, "YOLO_WORLD"),
+YOLOE::YOLOE(const std::string& yolo_world_model_path)
+    : env_(ORT_LOGGING_LEVEL_WARNING, "YOLOE"),
     session1_(nullptr)
 {
     Ort::SessionOptions  session_options_1;
@@ -47,11 +47,11 @@ YOLO_WORLD::YOLO_WORLD(const std::string& yolo_world_model_path)
 
 
 }
-YOLO_WORLD::~YOLO_WORLD()
+YOLOE::~YOLOE()
 {
 
 }
-void YOLO_WORLD::Preprocess(const cv::Mat& image, cv::Mat& blob_image)
+void YOLOE::Preprocess(const cv::Mat& image, cv::Mat& blob_image)
 {
     cv::Mat canvas=pad_image(cv::Rect(letterbox.offset_width, letterbox.offset_height, letterbox.scaled_width, letterbox.scaled_height));
     cv::resize(image, canvas, cv::Size(letterbox.scaled_width, letterbox.scaled_height), 0, 0, cv::INTER_LINEAR);
@@ -60,7 +60,7 @@ void YOLO_WORLD::Preprocess(const cv::Mat& image, cv::Mat& blob_image)
 
 }
 
-std::vector<Object> YOLO_WORLD::Postprocess(const cv::Size& input_size, const float* output, int anchors, int offset, float conf_threshold, float iou_threshold, int des_width,int des_height)
+std::vector<Object> YOLOE::Postprocess(const cv::Size& input_size, const float* output, int anchors, int offset, float conf_threshold, float iou_threshold, int des_width,int des_height)
 {
     std::vector<Object> objects;            
     float ratio = std::min(static_cast<float>(des_width) / static_cast<float>(input_size.width), static_cast<float>(des_height) / static_cast<float>(input_size.height));
@@ -111,7 +111,7 @@ std::vector<Object> YOLO_WORLD::Postprocess(const cv::Size& input_size, const fl
     
     return Nms(objects, iou_threshold);
 }
-std::vector<Object> YOLO_WORLD::Nms(const std::vector<Object>& dets, float iou_threshold)
+std::vector<Object> YOLOE::Nms(const std::vector<Object>& dets, float iou_threshold)
 {
     if (dets.empty()) {
         return std::vector<Object>();
@@ -164,7 +164,7 @@ std::vector<Object> YOLO_WORLD::Nms(const std::vector<Object>& dets, float iou_t
     return final_dets;
 }
 
-float YOLO_WORLD::Calculate_Iou(const Object& det1, const Object& det2)
+float YOLOE::Calculate_Iou(const Object& det1, const Object& det2)
 {
     float x1_inter = std::max(det1.x1, det2.x1);
     float y1_inter = std::max(det1.y1, det2.y1);
@@ -183,7 +183,7 @@ float YOLO_WORLD::Calculate_Iou(const Object& det1, const Object& det2)
     }
     return area_inter / area_union;
 }
-std::vector<std::string> YOLO_WORLD::ReadLabels(const std::string& labelFilePath)
+std::vector<std::string> YOLOE::ReadLabels(const std::string& labelFilePath)
 {
     std::vector<std::string> labels;
     std::ifstream labelFile(labelFilePath);
@@ -196,7 +196,7 @@ std::vector<std::string> YOLO_WORLD::ReadLabels(const std::string& labelFilePath
     }
     return labels;
 }
-void YOLO_WORLD::DrawResults(cv::Mat& image, const std::vector<Object>& dets, std::vector<std::string>& labels)
+void YOLOE::DrawResults(cv::Mat& image, const std::vector<Object>& dets, std::vector<std::string>& labels)
 {
     int image_h = image.rows;
     int image_w = image.cols;    
@@ -217,7 +217,7 @@ void YOLO_WORLD::DrawResults(cv::Mat& image, const std::vector<Object>& dets, st
 
 }
 
-void YOLO_WORLD::init_yolo_word_model(std::vector<std::vector<float>>clipdata,const cv::Mat& image,float conf_threshold_, float iou_threshold_)
+void YOLOE::init_yoloe_model(std::vector<std::vector<float>>clipdata,const cv::Mat& image,float conf_threshold_, float iou_threshold_)
 {
     int orig_width = image.cols;
     int orig_height = image.rows;
@@ -247,7 +247,7 @@ void YOLO_WORLD::init_yolo_word_model(std::vector<std::vector<float>>clipdata,co
     conf_threshold=conf_threshold_;
     iou_threshold=iou_threshold_;
 }
-cv::Mat YOLO_WORLD::inference_yolo_world_model(cv::Mat& image)
+cv::Mat YOLOE::inference_yoloe_model(cv::Mat& image)
 {
     std::vector<Ort::Value> input_tensors;
     input_tensors.reserve(2);

@@ -9,6 +9,26 @@
 #include <onnxruntime_cxx_api.h>
 #include "spacemit_ort_env.h"
 
+
+
+#ifdef USE_OPENCL
+#define CL_TARGET_OPENCL_VERSION 300
+#include <CL/cl.h>
+#include <CL/cl_ext.h>
+#include "Remap.h"
+#include "utils.h"
+#endif
+
+
+struct Letterbox_t {
+    int scaled_width ;
+    int scaled_height ;
+    int offset_width ;
+    int offset_height ;
+    float scale_ratio ;
+};
+
+
 struct Object {
     float x1;
     float y1;
@@ -41,3 +61,5 @@ std::vector<std::string> readLabels(const std::string& labelFilePath);
 std::vector<Object> Nms(const std::vector<Object>& dets);
 float Calculate_Iou(const Object& det1, const Object& det2);
 cv::Mat preprocess(const cv::Mat& image, int inputWidth = 640, int inputHeight = 640);
+Letterbox_t ComputeLetterbox(const cv::Mat& image, int dst_width, int dst_height);
+void GetMapXY(const cv::Mat& src, cv::Mat& map_x, cv::Mat& map_y, Letterbox_t letterbox);

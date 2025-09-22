@@ -1,0 +1,2 @@
+wget -O ./sign.jpg https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/Datasets/test/sign.jpg
+wget -O ./rec_word_dict.txt https://archive.spacemit.com/spacemit-ai/BRDK/Model_Zoo/CV/OCR/rec_word_dict.txt

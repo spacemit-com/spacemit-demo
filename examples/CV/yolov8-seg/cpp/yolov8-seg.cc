@@ -47,6 +47,53 @@ cv::Mat preprocess(
     return cv::dnn::blobFromImage(padded_image,1.0 / 255.0, cv::Size(inputWidth, inputHeight), cv::Scalar(0, 0, 0), false, false,CV_32F);
 }
 
+Letterbox_t ComputeLetterbox(const cv::Mat& image, int dst_width, int dst_height) {
+    // valid check
+    if (image.empty() or dst_width <= 0 or dst_height <= 0) {
+        std::cerr << "Error: Input image is empty or size is invalid!" << std::endl;
+        return {};
+    }
+
+    // ROI
+    int orig_width = image.cols;
+    int orig_height = image.rows;
+    float scale_ratio = fmin(static_cast<float>(dst_width) / static_cast<float>(orig_width), static_cast<float>(dst_height) / static_cast<float>(orig_height));
+    int scaled_width = static_cast<int>(orig_width * scale_ratio);
+    int scaled_height = static_cast<int>(orig_height * scale_ratio);
+
+    int offset_width = (dst_width - scaled_width) / 2;
+    int offset_height = (dst_height - scaled_height) / 2;
+
+    Letterbox_t letterbox;
+    letterbox.scaled_width = scaled_width;
+    letterbox.scaled_height = scaled_height;
+    letterbox.offset_width = offset_width;
+    letterbox.offset_height = offset_height;
+    letterbox.scale_ratio = scale_ratio;
+
+    return letterbox;
+}
+
+void GetMapXY(const cv::Mat& src, cv::Mat& map_x, cv::Mat& map_y, Letterbox_t letterbox) {
+    if (!map_x.empty() or !map_y.empty()) {
+        std::cerr << "map_x and map_y should both be empty" << std::endl;
+    }
+    int src_width = src.cols;
+    int src_height = src.rows;
+    cv::Mat map_x_copy(letterbox.scaled_height, letterbox.scaled_width, CV_32FC1, cv::Scalar(-1));
+    cv::Mat map_y_copy(letterbox.scaled_height, letterbox.scaled_width, CV_32FC1, cv::Scalar(-1));
+
+    for (int h = 0; h < letterbox.scaled_height; h++) {
+        for (int w = 0; w < letterbox.scaled_width; w++) {
+            map_x_copy.at<float>(h, w) = w / letterbox.scale_ratio;
+            map_y_copy.at<float>(h, w) = h / letterbox.scale_ratio;
+        }
+    }
+
+    map_x_copy.copyTo(map_x);
+    map_y_copy.copyTo(map_y);
+}
+
 
 
 // 计算两个检测框的 IoU
@@ -404,13 +451,33 @@ cv::Mat Yolov8SegInference(const cv::Mat& src_image, const std::string& modelPat
 
     
     cv::Mat image = src_image.clone();        
-    cv::Mat inputTensor = preprocess(image, inputWidth, inputHeight);
+
+    #ifdef USE_OPENCL
+        Letterbox_t letterbox = ComputeLetterbox(image, inputWidth, inputHeight);
+        // mapx & mapy
+        cv::Mat map_x, map_y;
+        GetMapXY(image, map_x, map_y, letterbox);
+
+        // Remap setting
+        cv::Mat kernel_in;
+        cv::Mat kernel_out;
+        std::string kernel_file_path = "../../../../../third-party/opencl/yolo-process/remap.cl";
+        std::string kernel_name = "remap_split";
+        Remap remapper(kernel_file_path, kernel_name, image.cols, image.rows, map_x, map_y, inputWidth, inputHeight, kernel_in, kernel_out);
+        image.copyTo(kernel_in);
+        remapper.remap();
+    #else
+        cv::Mat inputTensor = preprocess(image, inputWidth, inputHeight);    
+    #endif    
 
     // 创建输入张量
     std::vector<int64_t> input_shape = {1, 3, inputHeight, inputWidth};
     auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-
-    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, reinterpret_cast<float*>(inputTensor.data), 3 * inputHeight * inputWidth, input_shape.data(), input_shape.size());
+    #ifdef USE_OPENCL
+        Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, kernel_out.ptr<float>(), kernel_out.total(), input_shape.data(), input_shape.size());
+    #else
+        Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, reinterpret_cast<float*>(inputTensor.data), 3 * inputHeight * inputWidth, input_shape.data(), input_shape.size());
+    #endif
 
     // 进行推理
     std::vector<Ort::Value> outputs;    

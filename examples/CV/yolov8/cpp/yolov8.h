@@ -8,6 +8,25 @@
 #include "spacemit_ort_env.h"
 
 
+
+#ifdef USE_OPENCL
+#define CL_TARGET_OPENCL_VERSION 300
+#include <CL/cl.h>
+#include <CL/cl_ext.h>
+#include "Remap.h"
+#include "utils.h"
+#endif
+
+
+struct Letterbox_t {
+    int scaled_width ;
+    int scaled_height ;
+    int offset_width ;
+    int offset_height ;
+    float scale_ratio ;
+};
+
+
 struct Object {
     float x1;
     float y1;

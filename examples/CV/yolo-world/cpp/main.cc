@@ -1,5 +1,5 @@
 #include"clip.hpp"
-#include"yolo_word.hpp"
+#include"yolo_word.h"
 #include <iostream>
 #include<sstream>
 #include <iomanip>

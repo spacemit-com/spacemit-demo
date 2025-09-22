@@ -1,4 +1,4 @@
 onnxruntime
 opencv-python
-numpy==1.26.4
+numpy==2.2.6
 spacemit-ort

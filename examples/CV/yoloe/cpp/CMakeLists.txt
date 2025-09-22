@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BUILD_TYPE RELEASE)
 
 
-file(GLOB SRCS "*.cpp")
+file(GLOB SRCS "*.cc")
 
 
 find_package(OpenCV 4 REQUIRED)

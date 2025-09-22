@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 
-project(yolo_world_demo)
+project(MobileSam1_demo)
 
 
 set(CMAKE_CXX_STANDARD 20)
@@ -20,8 +20,8 @@ endif()
 #set(ONNXRUNTIME_INCLUDE_DIR "/usr/include")
 #set(ONNXRUNTIME_LIB_DIR "/usr/lib")
 
-set(ONNXRUNTIME_INCLUDE_DIR "/home/bianbu/spacemit-ort.riscv64.2.0.0+beta0/include")
-set(ONNXRUNTIME_LIB_DIR "/home/bianbu/spacemit-ort.riscv64.2.0.0+beta0/lib")
+set(ONNXRUNTIME_INCLUDE_DIR "/home/bianbu/spacemit-ort.riscv64.2.0.0+beta2/include")
+set(ONNXRUNTIME_LIB_DIR "/home/bianbu/spacemit-ort.riscv64.2.0.0+beta2/lib")
 
 
 include_directories(${ONNXRUNTIME_INCLUDE_DIR})

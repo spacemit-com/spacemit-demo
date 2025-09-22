@@ -8,6 +8,25 @@
 #include "spacemit_ort_env.h"
 
 
+
+#ifdef USE_OPENCL
+#define CL_TARGET_OPENCL_VERSION 300
+#include <CL/cl.h>
+#include <CL/cl_ext.h>
+#include "Remap.h"
+#include "utils.h"
+#endif
+
+
+struct Letterbox_t {
+    int scaled_width ;
+    int scaled_height ;
+    int offset_width ;
+    int offset_height ;
+    float scale_ratio ;
+};
+
+
 struct KeyPoint {
     int x;
     int y;
@@ -38,3 +57,5 @@ float Calculate_Iou(const Object& det1, const Object& det2);
 std::vector<Object> Nms(const std::vector<Object>& dets, float iou_threshold);
 std::vector<Object> Postprocess(const cv::Size& input_size, const float* output, int anchors, int offset, int des_width, int des_height);
 cv::Mat Yolov8PoseInference(cv::Mat& image, const std::string& modelPath);
+Letterbox_t ComputeLetterbox(const cv::Mat& image, int dst_width, int dst_height);
+void GetMapXY(const cv::Mat& src, cv::Mat& map_x, cv::Mat& map_y, Letterbox_t letterbox);
